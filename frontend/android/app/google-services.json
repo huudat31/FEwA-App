@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "973797524907",
+    "project_id": "flwe-mobile-app-13052005",
+    "storage_bucket": "flwe-mobile-app-13052005.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:973797524907:android:52d2c488685cd9ca637eee",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "973797524907-jfprp1u4crdlcibua06mh4kgu8u0qs2e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.frontend",
+            "certificate_hash": "b392b06735316bb7878307b4d9d57b543a10d28e"
+          }
+        },
+        {
+          "client_id": "973797524907-heog9ofo5mu5ae1decn77cm9h1526rfo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCx0oyOPmIaKaVBzTPSm11uHhOLib4DIQw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "973797524907-heog9ofo5mu5ae1decn77cm9h1526rfo.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "973797524907-pdv8mi8gk0qgmrdc2cdle61onj4jrqlg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.frontend"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
