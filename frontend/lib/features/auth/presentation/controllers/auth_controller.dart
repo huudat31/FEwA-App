@@ -10,9 +10,17 @@ class AuthController {
     authCubit.login(email, password);
   }
 
-  void handleRegister(String email) {
-    if (email.isEmpty) return;
-    authCubit.register(email);
+  void handleGoogleLogin() {
+    authCubit.loginWithGoogle();
+  }
+
+  void handleFacebookLogin() {
+    authCubit.loginWithFacebook();
+  }
+
+  void handleRegister(String fullName, String email, String password) {
+    if (fullName.isEmpty || email.isEmpty || password.isEmpty) return;
+    authCubit.register(fullName, email, password);
   }
 
   void handleOtpVerify(String code) {

@@ -67,7 +67,13 @@ class _AuthGateState extends State<AuthGate> {
 
         // Unauthenticated or Error (when falling back)
         if (_showRegister) {
-          return const RegisterScreen();
+          return RegisterScreen(
+            onToggleLogin: () {
+              setState(() {
+                _showRegister = false;
+              });
+            },
+          );
         } else {
           return LoginScreen(
             onToggleRegister: () {

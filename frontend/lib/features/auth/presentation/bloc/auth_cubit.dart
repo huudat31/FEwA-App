@@ -5,8 +5,9 @@ import 'auth_state.dart';
 class AuthCubit extends Cubit<AuthState> {
   final AuthApi api;
 
-  // Storing intermediate email during the flow
   String? _pendingEmail;
+  String? _pendingFullName;
+  String? _pendingPassword;
   Map<String, dynamic>? _user;
 
   AuthCubit(this.api) : super(AuthInitial());
@@ -25,11 +26,13 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> register(String email) async {
+  Future<void> register(String fullName, String email, String password) async {
     emit(AuthLoading());
     try {
       await api.register(email);
       _pendingEmail = email;
+      _pendingFullName = fullName;
+      _pendingPassword = password;
       emit(AuthOtpSent(email));
     } catch (e) {
       emit(
@@ -47,7 +50,16 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthVerifyingOtp(_pendingEmail!));
     try {
       await api.verifyOtp(_pendingEmail!, code);
-      emit(AuthCreatingPassword(_pendingEmail!));
+      
+      // Auto complete password creation and profile setup using pending data
+      if (_pendingPassword != null) {
+        _user = await api.createPassword(_pendingEmail!, _pendingPassword!);
+      }
+      if (_pendingFullName != null) {
+        await api.saveProfile(_pendingFullName!, "");
+      }
+      
+      emit(AuthOnboarding(onboardingStep: 2));
     } catch (e) {
       emit(
         AuthError('OTP Invalid: ${e.toString().replaceAll("Exception: ", "")}'),
@@ -106,6 +118,36 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
       emit(AuthOnboarding(onboardingStep: 2));
+    }
+  }
+
+  Future<void> loginWithGoogle() async {
+    emit(AuthLoading());
+    try {
+      _user = await api.loginWithGoogle();
+      emit(AuthAuthenticated(_user!));
+    } catch (e) {
+      emit(
+        AuthError(
+          'Failed to login with Google: ${e.toString().replaceAll("Exception: ", "")}',
+        ),
+      );
+      emit(AuthUnauthenticated());
+    }
+  }
+
+  Future<void> loginWithFacebook() async {
+    emit(AuthLoading());
+    try {
+      _user = await api.loginWithFacebook();
+      emit(AuthAuthenticated(_user!));
+    } catch (e) {
+      emit(
+        AuthError(
+          'Failed to login with Facebook: ${e.toString().replaceAll("Exception: ", "")}',
+        ),
+      );
+      emit(AuthUnauthenticated());
     }
   }
 

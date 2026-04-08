@@ -1,7 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
 class AuthApi {
+  bool _isGoogleSignInInitialized = false;
+
   // Placeholder base URL for the real API
   static const String baseUrl = 'https://api.example.com/v1';
 
@@ -65,5 +70,56 @@ class AuthApi {
   Future<Map<String, dynamic>?> getCurrentUser() async {
     await _simulateDelay();
     return null; // By default simulate logged out structure
+  }
+
+  Future<Map<String, dynamic>> loginWithGoogle() async {
+    if (!_isGoogleSignInInitialized) {
+      await GoogleSignIn.instance.initialize();
+      _isGoogleSignInInitialized = true;
+    }
+
+    try {
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInClientAuthorization? authz = await googleUser.authorizationClient.authorizationForScopes([]);
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: authz?.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      if (user != null) {
+        return {'id': user.uid, 'email': user.email ?? '', 'token': await user.getIdToken()};
+      } else {
+        throw Exception('Failed to sign in with Google');
+      }
+    } catch (e) {
+      if (e is Exception && e.toString().contains('canceled')) {
+        throw Exception('Google login canceled by user');
+      }
+      throw Exception('Google login failed: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> loginWithFacebook() async {
+    final LoginResult result = await FacebookAuth.instance.login();
+    if (result.status == LoginStatus.success) {
+      final AccessToken accessToken = result.accessToken!;
+      final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.tokenString);
+      
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
+      
+      if (user != null) {
+        return {'id': user.uid, 'email': user.email ?? '', 'token': await user.getIdToken()};
+      } else {
+        throw Exception('Failed to sign in with Facebook');
+      }
+    } else {
+      throw Exception(result.message ?? 'Facebook login failed');
+    }
   }
 }
