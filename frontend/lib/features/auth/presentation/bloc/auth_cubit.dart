@@ -1,29 +1,53 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../data/api/auth_api.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../../domain/repositories/auth_repository.dart';
+import '../../data/services/token_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  final AuthApi api;
+  final AuthRepository api;
+  final TokenService tokenService;
 
   String? _pendingEmail;
   String? _pendingFullName;
   String? _pendingPassword;
   Map<String, dynamic>? _user;
 
-  AuthCubit(this.api) : super(AuthInitial());
+  AuthCubit(this.api, this.tokenService) : super(AuthInitial());
 
   Future<void> checkCurrentUser() async {
     emit(AuthLoading());
     try {
-      _user = await api.getCurrentUser();
+      // First check Firebase session
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        final token = await firebaseUser.getIdToken();
+        _user = {'id': firebaseUser.uid, 'email': firebaseUser.email ?? '', 'token': token};
+        emit(AuthAuthenticated(_user!));
+        return;
+      }
+      // Fall back to secure storage for JWT-based auth
+      _user = await tokenService.getUser();
       if (_user != null) {
         emit(AuthAuthenticated(_user!));
       } else {
         emit(AuthUnauthenticated());
       }
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(AuthUnauthenticated());
     }
+  }
+
+  void emitValidationError(String message) {
+    emit(AuthError(message));
+  }
+
+  void cancelOtp() {
+    _pendingEmail = null;
+    _pendingFullName = null;
+    _pendingPassword = null;
+    emit(AuthUnauthenticated());
   }
 
   Future<void> register(String fullName, String email, String password) async {
@@ -45,20 +69,27 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> verifyOtp(String code) async {
-    if (_pendingEmail == null) return;
+    if (_pendingEmail == null) {
+      emit(AuthError('Session expired. Please register again.'));
+      emit(AuthUnauthenticated());
+      return;
+    }
 
     emit(AuthVerifyingOtp(_pendingEmail!));
     try {
       await api.verifyOtp(_pendingEmail!, code);
-      
-      // Auto complete password creation and profile setup using pending data
-      if (_pendingPassword != null) {
-        _user = await api.createPassword(_pendingEmail!, _pendingPassword!);
+
+      if (_pendingPassword == null || _pendingFullName == null) {
+        // Guard: should never happen in normal flow
+        emit(AuthError('Registration session lost. Please start again.'));
+        emit(AuthUnauthenticated());
+        return;
       }
-      if (_pendingFullName != null) {
-        await api.saveProfile(_pendingFullName!, "");
-      }
-      
+
+      _user = await api.createPassword(_pendingEmail!, _pendingPassword!);
+      await api.saveProfile(_pendingFullName!, '');
+      await tokenService.saveUser(_user!);
+
       emit(AuthOnboarding(onboardingStep: 2));
     } catch (e) {
       emit(
@@ -76,6 +107,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       _user = await api.createPassword(_pendingEmail!, password);
+      // await tokenService.saveUser(_user!); // Should save here if needed
       emit(AuthOnboarding(onboardingStep: 1)); // Proceed to profile setup
     } catch (e) {
       emit(
@@ -106,6 +138,11 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       await api.selectGoal(goalId);
+      
+      _pendingEmail = null;
+      _pendingFullName = null;
+      _pendingPassword = null;
+
       if (_user != null) {
         emit(AuthAuthenticated(_user!));
       } else {
@@ -125,6 +162,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       _user = await api.loginWithGoogle();
+      await tokenService.saveUser(_user!);
       emit(AuthAuthenticated(_user!));
     } catch (e) {
       emit(
@@ -140,6 +178,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       _user = await api.loginWithFacebook();
+      await tokenService.saveUser(_user!);
       emit(AuthAuthenticated(_user!));
     } catch (e) {
       emit(
@@ -155,8 +194,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       _user = await api.login(email, password);
-      // In a real app we would check if onboarding is complete inside the _user object
-      // For now, immediately move to authenticated since Login resolves to Home.
+      await tokenService.saveUser(_user!);
       emit(AuthAuthenticated(_user!));
     } catch (e) {
       emit(
@@ -172,8 +210,16 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       await api.logout();
+      await FirebaseAuth.instance.signOut();
+      final googleSignIn = GoogleSignIn.instance;
+      await googleSignIn.signOut();
+      await tokenService.clearUser();
+
       _user = null;
       _pendingEmail = null;
+      _pendingFullName = null;
+      _pendingPassword = null;
+      
       emit(AuthUnauthenticated());
     } catch (e) {
       emit(AuthError('Failed to logout.'));

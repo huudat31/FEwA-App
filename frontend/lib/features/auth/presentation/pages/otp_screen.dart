@@ -43,9 +43,7 @@ class _OtpScreenState extends State<OtpScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF191C1E)),
           onPressed: () {
-            // Can context.read<AuthCubit>().logout() or go back to register depending on logic
-            // For now, let's just logout to restart
-            context.read<AuthCubit>().logout();
+            context.read<AuthCubit>().cancelOtp();
           },
         ),
       ),

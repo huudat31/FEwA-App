@@ -1,0 +1,10 @@
+Analyzing auth_api.dart...
+
+  error - auth_api.dart:86:37 - The named parameter 'scopes' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'scopes'. - undefined_named_parameter
+  error - auth_api.dart:88:66 - The method 'signIn' isn't defined for the type 'GoogleSignIn'. Try correcting the name to the name of an existing method, or defining a method named 'signIn'. - undefined_method
+  error - auth_api.dart:101:33 - The getter 'accessToken' isn't defined for the type 'GoogleSignInAuthentication'. Try importing the library that defines 'accessToken', correcting the name to the name of an existing getter, or defining a getter or field named 'accessToken'. - undefined_getter
+warning - auth_api.dart:1:8 - Unused import: 'dart:convert'. Try removing the import directive. - unused_import
+warning - auth_api.dart:2:8 - Unused import: 'package:http/http.dart'. Try removing the import directive. - unused_import
+   info - auth_api.dart:94:11 - Uses 'await' on an instance of 'GoogleSignInAuthentication', which is not a subtype of 'Future'. Try removing the 'await' or changing the expression. - await_only_futures
+
+6 issues found.

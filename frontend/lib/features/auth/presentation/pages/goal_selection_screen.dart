@@ -122,8 +122,9 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
                   AppButton(
                     text: 'Complete Setup',
                     isLoading: isLoading,
+                    isDisabled: _selectedGoal == null,
                     onPressed: _selectedGoal == null
-                        ? () {} // Disabled conditionally
+                        ? null
                         : () {
                             _authController.handleSelectGoal(_selectedGoal!);
                           },

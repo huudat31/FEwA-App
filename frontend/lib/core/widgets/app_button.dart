@@ -3,18 +3,21 @@ import 'package:frontend/core/constants/colors_theme.dart';
 
 class AppButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isLoading;
+  final bool isDisabled;
 
   const AppButton({
     Key? key,
     required this.text,
-    required this.onPressed,
+    this.onPressed,
     this.isLoading = false,
+    this.isDisabled = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final trulyDisabled = isDisabled || onPressed == null;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: AnimatedContainer(
@@ -22,23 +25,24 @@ class AppButton extends StatelessWidget {
         width: double.infinity,
         height: 56,
         decoration: BoxDecoration(
-          color: isLoading
+          color: (isLoading || trulyDisabled)
               ? ColorsTheme.kGreen.withValues(alpha: 0.3)
               : ColorsTheme.kGreen,
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
-            BoxShadow(
-              color: ColorsTheme.kGreen.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
+            if (!trulyDisabled)
+              BoxShadow(
+                color: ColorsTheme.kGreen.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
           ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: isLoading ? null : onPressed,
+            borderRadius: BorderRadius.circular(25),
+            onTap: (isLoading || trulyDisabled) ? null : onPressed,
             child: Center(
               child: isLoading
                   ? const SizedBox(
@@ -51,8 +55,8 @@ class AppButton extends StatelessWidget {
                     )
                   : Text(
                       text,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: trulyDisabled ? Colors.white.withOpacity(0.8) : Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend/features/auth/domain/repositories/auth_repository.dart';
+import 'package:frontend/features/auth/data/services/token_service.dart';
 import 'package:frontend/features/auth/data/api/auth_api.dart';
 import 'package:frontend/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:frontend/features/auth/presentation/pages/auth_gate.dart';
@@ -18,10 +20,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-      create: (context) => AuthApi(),
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AuthRepository>(
+          create: (context) => AuthApi(),
+        ),
+        RepositoryProvider<TokenService>(
+          create: (context) => TokenService(),
+        ),
+      ],
       child: BlocProvider(
-        create: (context) => AuthCubit(context.read<AuthApi>()),
+        create: (context) => AuthCubit(
+          context.read<AuthRepository>(),
+          context.read<TokenService>(),
+        ),
         child: MaterialApp(
           title: 'Fewa Mobile App',
           theme: AppTheme.lightTheme,

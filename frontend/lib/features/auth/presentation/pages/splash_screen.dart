@@ -84,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     const SizedBox(height: 32),
                     const Text(
-                      'FEWA',
+                      'FLE',
                       style: TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.w800,
